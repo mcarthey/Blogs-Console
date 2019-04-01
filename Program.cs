@@ -176,7 +176,14 @@ namespace BlogsConsole
                         var post = GetPost(db);
                         if (post != null)
                         {
-                            // TODO: input post
+                            // input post
+                            Post UpdatedPost = InputPost(db);
+                            if (UpdatedPost != null)
+                            {
+                                UpdatedPost.PostId = post.PostId;
+                                db.EditPost(UpdatedPost);
+                                logger.Info("Post (id: {postid}) updated", UpdatedPost.PostId);
+                            }
                         }
                     }
                     Console.WriteLine();
