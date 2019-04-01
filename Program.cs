@@ -24,6 +24,7 @@ namespace BlogsConsole
                     Console.WriteLine("3) Create Post");
                     Console.WriteLine("4) Display Posts");
                     Console.WriteLine("5) Delete Post");
+                    Console.WriteLine("6) Edit Post");
                     Console.WriteLine("Enter q to quit");
                     choice = Console.ReadLine();
                     Console.Clear();
@@ -181,6 +182,17 @@ namespace BlogsConsole
                         {
                             db.DeletePost(post);
                             logger.Info("Post (id: {postid}) deleted", post.PostId);
+                        }
+                    }
+                    else if (choice == "6")
+                    {
+                        // edit post
+                        Console.WriteLine("Choose the post to edit:");
+                        var db = new BloggingContext();
+                        var post = GetPost(db);
+                        if (post != null)
+                        {
+                            // TODO: input post
                         }
                     }
                     Console.WriteLine();
