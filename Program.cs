@@ -23,6 +23,7 @@ namespace BlogsConsole
                     Console.WriteLine("2) Add Blog");
                     Console.WriteLine("3) Create Post");
                     Console.WriteLine("4) Display Posts");
+                    Console.WriteLine("5) Delete Post");
                     Console.WriteLine("Enter q to quit");
                     choice = Console.ReadLine();
                     Console.Clear();
@@ -169,6 +170,11 @@ namespace BlogsConsole
                         {
                             logger.Error("Invalid Blog Id");
                         }
+                    }
+                    else if (choice == "5")
+                    {
+                        // delete post
+                        Console.WriteLine("Choose the post to delete:");
                     }
                     Console.WriteLine();
                 } while (choice.ToLower() != "q");
