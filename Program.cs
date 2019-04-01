@@ -179,7 +179,7 @@ namespace BlogsConsole
                         var post = GetPost(db);
                         if (post != null)
                         {
-                            // TODO: delete post
+                            db.DeletePost(post);
                             logger.Info("Post (id: {postid}) deleted", post.PostId);
                         }
                     }
