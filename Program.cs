@@ -95,16 +95,24 @@ namespace BlogsConsole
                                 post.BlogId = BlogId;
                                 Console.WriteLine("Enter the Post title");
                                 post.Title = Console.ReadLine();
-                                if (post.Title.Length == 0)
+                                Console.WriteLine("Enter the Post content");
+                                post.Content = Console.ReadLine();
+
+                                ValidationContext context = new ValidationContext(post, null, null);
+                                List<ValidationResult> results = new List<ValidationResult>();
+
+                                var isValid = Validator.TryValidateObject(post, context, results, true);
+                                if (isValid)
                                 {
-                                    logger.Error("Post title cannot be null");
+                                    db.AddPost(post);
+                                    logger.Info("Post added - {title}", post.Title);
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Enter the Post content");
-                                    post.Content = Console.ReadLine();
-                                    db.AddPost(post);
-                                    logger.Info("Post added - {title}", post.Title);
+                                    foreach (var result in results)
+                                    {
+                                        logger.Error($"{result.MemberNames.First()} : {result.ErrorMessage}");
+                                    }
                                 }
                             }
                             else

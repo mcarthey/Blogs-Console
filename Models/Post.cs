@@ -1,8 +1,11 @@
-﻿namespace BlogsConsole.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BlogsConsole.Models
 {
     public class Post
     {
         public int PostId { get; set; }
+        [Required]
         public string Title { get; set; }
         public string Content { get; set; }
 
