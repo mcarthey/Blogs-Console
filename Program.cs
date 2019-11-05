@@ -3,7 +3,6 @@ using BlogsConsole.Models;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace BlogsConsole
 {
@@ -15,243 +14,199 @@ namespace BlogsConsole
             logger.Info("Program started");
             try
             {
-                string choice;
+                String input;
                 do
                 {
-                    Console.WriteLine("Enter your selection:");
-                    Console.WriteLine("1) Display all blogs");
-                    Console.WriteLine("2) Add Blog");
+                    Console.WriteLine("\n1) Display all blogs");
+                    Console.WriteLine("2) Add blog");
                     Console.WriteLine("3) Create Post");
                     Console.WriteLine("4) Display Posts");
-                    Console.WriteLine("5) Delete Post");
-                    Console.WriteLine("6) Edit Post");
-                    Console.WriteLine("Enter q to quit");
-                    choice = Console.ReadLine();
-                    Console.Clear();
-                    logger.Info("Option {choice} selected", choice);
+                    Console.WriteLine("enter anything else to exit");
+                    input = Console.ReadLine();
 
-                    if (choice == "1")
+                    var db = new BloggingContext();
+                    var query = db.Blogs.OrderBy(b => b.Name);
+                    switch (input)
                     {
-                        // display blogs
-                        var db = new BloggingContext();
-                        var query = db.Blogs.OrderBy(b => b.Name);
-
-                        Console.WriteLine($"{query.Count()} Blogs returned");
-                        foreach (var item in query)
-                        {
-                            Console.WriteLine(item.Name);
-                        }
-                    }
-                    else if (choice == "2")
-                    {
-                        // Add blog
-                        Console.Write("Enter a name for a new Blog: ");
-                        var blog = new Blog { Name = Console.ReadLine() };
-
-                        ValidationContext context = new ValidationContext(blog, null, null);
-                        List<ValidationResult> results = new List<ValidationResult>();
-
-                        var isValid = Validator.TryValidateObject(blog, context, results, true);
-                        if (isValid)
-                        {
-                            var db = new BloggingContext();
-                            // check for unique name
-                            if (db.Blogs.Any(b => b.Name == blog.Name))
+                        case "1":
+                            // Display all Blogs from the database
+                            Console.WriteLine("\nAll blogs in the database:");
+                            var counter = 0;
+                            foreach (var item in query)
                             {
-                                // generate validation error
-                                isValid = false;
-                                results.Add(new ValidationResult("Blog name exists", new string[] { "Name" }));
+                                counter++;
+                                Console.WriteLine(counter + ") " + item.Name);
                             }
-                            else
+                            Console.WriteLine(counter + " Blogs returned");
+                            break;
+                        case "2":
+                            // Create and save a new Blog
+                            Console.Write("\nEnter a name for a new Blog: ");
+                            var name = Console.ReadLine();
+                            // make sure string is not empty or null
+                            if (!String.IsNullOrEmpty(name))
                             {
-                                logger.Info("Validation passed");
-                                // save blog to db
-                                db.AddBlog(blog);
-                                logger.Info("Blog added - {name}", blog.Name);
-                            }
-                        }
-                        if (!isValid)
-                        {
-                            foreach (var result in results)
-                            {
-                                logger.Error($"{result.MemberNames.First()} : {result.ErrorMessage}");
-                            }
-                        }
-                    }
-                    else if (choice == "3")
-                    {
-                        // Create Post
-                        var db = new BloggingContext();
-                        var query = db.Blogs.OrderBy(b => b.BlogId);
-
-                        Console.WriteLine("Select the blog you would to post to:");
-                        foreach (var item in query)
-                        {
-                            Console.WriteLine($"{item.BlogId}) {item.Name}");
-                        }
-                        if (int.TryParse(Console.ReadLine(), out int BlogId))
-                        {
-                            if (db.Blogs.Any(b => b.BlogId == BlogId))
-                            {
-                                Post post = InputPost(db);
-                                if (post != null)
+                                //check if blog already exists
+                                if (checkBlog(name))
                                 {
-                                    post.BlogId = BlogId;
-                                    db.AddPost(post);
-                                    logger.Info("Post added - {title}", post.Title);
-                                }
-                            }
-                            else
-                            {
-                                logger.Error("There are no Blogs saved with that Id");
-                            }
-                        }
-                        else
-                        {
-                            logger.Error("Invalid Blog Id");
-                        }
-                    }
-                    else if (choice == "4")
-                    {
-                        // Display Posts
-                        var db = new BloggingContext();
-                        var query = db.Blogs.OrderBy(b => b.BlogId);
-                        Console.WriteLine("Select the blog's posts to display:");
-                        Console.WriteLine("0) Posts from all blogs");
-                        foreach (var item in query)
-                        {
-                            Console.WriteLine($"{item.BlogId}) Posts from {item.Name}");
-                        }
-
-                        if (int.TryParse(Console.ReadLine(), out int BlogId))
-                        {
-                            IEnumerable<Post> Posts;
-                            if (BlogId != 0 && db.Blogs.Count(b => b.BlogId == BlogId) == 0)
-                            {
-                                logger.Error("There are no Blogs saved with that Id");
-                            }
-                            else
-                            {
-                                // display posts from all blogs
-                                Posts = db.Posts.OrderBy(p => p.Title);
-                                if (BlogId == 0)
-                                {
-                                    // display all posts from all blogs
-                                    Posts = db.Posts.OrderBy(p => p.Title);
+                                    var blog = new Blog { Name = name };
+                                    db.AddBlog(blog);
+                                    logger.Info("Blog added - {name}", name);
                                 }
                                 else
                                 {
-                                    // display post from selected blog
-                                    Posts = db.Posts.Where(p => p.BlogId == BlogId).OrderBy(p => p.Title);
+                                    Console.WriteLine("\nBlog already exists");
                                 }
-                                Console.WriteLine($"{Posts.Count()} post(s) returned");
-                                foreach (var item in Posts)
-                                {
-                                    Console.WriteLine($"Blog: {item.Blog.Name}\nTitle: {item.Title}\nContent: {item.Content}\n");
-                                }
+                                break;
                             }
-                        }
-                        else
-                        {
-                            logger.Error("Invalid Blog Id");
-                        }
-                    }
-                    else if (choice == "5")
-                    {
-                        // delete post
-                        Console.WriteLine("Choose the post to delete:");
-                        var db = new BloggingContext();
-                        var post = GetPost(db);
-                        if (post != null)
-                        {
-                            db.DeletePost(post);
-                            logger.Info("Post (id: {postid}) deleted", post.PostId);
-                        }
-                    }
-                    else if (choice == "6")
-                    {
-                        // edit post
-                        Console.WriteLine("Choose the post to edit:");
-                        var db = new BloggingContext();
-                        var post = GetPost(db);
-                        if (post != null)
-                        {
-                            // input post
-                            Post UpdatedPost = InputPost(db);
-                            if (UpdatedPost != null)
+                            else
                             {
-                                UpdatedPost.PostId = post.PostId;
-                                db.EditPost(UpdatedPost);
-                                logger.Info("Post (id: {postid}) updated", UpdatedPost.PostId);
+                                Console.WriteLine("Name is empty or null");
+                                break;
                             }
-                        }
+                        case "3":
+                            foreach (var item in query)
+                            {
+                                Console.WriteLine(item.Name);
+                            }
+
+                            Console.WriteLine("\nEnter the name of the blog you wish to post to");
+                            String blogToPostTo = Console.ReadLine();
+
+                            //check that blog exists
+                            if (!checkBlog(blogToPostTo))
+                            {
+                                //get blog
+                                var blogItem = db.Blogs.Where(b => b.Name.Equals(blogToPostTo));
+                                Blog blog = blogItem.First();
+
+                                //get post details
+                                String postTitle = "";
+                                while (String.IsNullOrEmpty(postTitle))
+                                {
+                                    Console.WriteLine("enter a post title");
+                                    postTitle = Console.ReadLine();
+                                }
+
+                                String postContent = "";
+                                while (String.IsNullOrEmpty(postContent))
+                                {
+                                    Console.WriteLine("Enter content for the post");
+                                    postContent = Console.ReadLine();
+                                }
+
+                                //make post
+                                var post = new Post { Title = postTitle, Content = postContent, BlogId = blog.BlogId };
+
+                                //add post to dataBase
+                                db.AddPost(post);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Blog does not exist");
+                            }
+                            break;
+                        case "4":
+                            var choice = "";
+                            Console.WriteLine("\n0) Display all blogs");
+                            foreach (var item in query)
+                            {
+                                Console.WriteLine(item.Name);
+                            }
+                            Console.WriteLine("\nEnter the name of the blog you wish to see posts from or enter '0' to see all");
+                            Console.WriteLine("enter anything else to exit");
+                            choice = Console.ReadLine();
+                            var postList = db.Posts.OrderBy(p => p.BlogId);
+                            //check for input
+                            if (!String.IsNullOrEmpty(choice))
+                            {
+                                //display all
+                                if (choice == "0")
+                                {
+                                    //get number of posts returned
+                                    var postCounter = 0;
+                                    var blogCounter = 0;
+                                    foreach (var blogID in postList.Distinct())
+                                    {
+                                        // increment blogCounter for each blog that has atleast 1 post
+                                        blogCounter++;
+                                    }
+                                    foreach (var post in postList)
+                                    {
+                                        //increment postCounter for each post 
+                                        postCounter++;
+                                    }
+
+                                    //print out the results
+                                    Console.WriteLine(postCounter + " Post(s) returned from " + blogCounter + " Blog(s).");
+
+                                    //now print out all posts and their details
+                                    foreach (var post in postList)
+                                    {
+                                        Console.WriteLine("\nBlog: " + post.Blog.Name);
+                                        Console.WriteLine("Title: " + post.Title);
+                                        Console.WriteLine("Content: " + post.Content);
+                                    }
+                                }
+
+                                //dispay selected blogs posts
+                                else
+                                {
+                                    //get blog
+                                    var blogItem = db.Blogs.Where(b => b.Name.Equals(choice));
+
+                                    //post counter
+                                    var postCounter = 0;
+                                    foreach (var post in blogItem)
+                                    {
+                                        postCounter++;
+                                    }
+
+                                    foreach (var blog in blogItem) {
+                                        Console.WriteLine(postCounter + " Posts returned from " + blog.Name);
+                                        Console.WriteLine("\n" + blog.Name);
+                                    }
+
+                                    foreach (var post in postList.Where(p => p.Blog.Name.Equals(choice)))
+                                    {
+                                        Console.WriteLine(post.Title);
+                                        Console.WriteLine(post.Content);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("You did not select a blog correctly");
+                            }
+                            break;
                     }
-                    Console.WriteLine();
-                } while (choice.ToLower() != "q");
+
+                } while (input == "1" || input == "2" || input == "3" || input == "4");
             }
             catch (Exception ex)
             {
                 logger.Error(ex.Message);
+                //logger.Error(ex.InnerException.Message);
+                Console.ReadLine();
+
             }
-            logger.Info("Program ended");
-        }
+        
+        logger.Info("Program ended");
+    }
+        public static Boolean checkBlog(String name)
+    { 
+            var unique = true;
+            var db = new BloggingContext();
+            var query = db.Blogs.OrderBy(b => b.Name);
 
-        public static Post InputPost(BloggingContext db)
-        {
-            Post post = new Post();
-            Console.WriteLine("Enter the Post title");
-            post.Title = Console.ReadLine();
-            Console.WriteLine("Enter the Post content");
-            post.Content = Console.ReadLine();
-
-            ValidationContext context = new ValidationContext(post, null, null);
-            List<ValidationResult> results = new List<ValidationResult>();
-
-            var isValid = Validator.TryValidateObject(post, context, results, true);
-            if (isValid)
+            foreach (var item in query)
             {
-                return post;
-            }
-            else
-            {
-                foreach (var result in results)
+                if (name == item.Name)
                 {
-                    logger.Error($"{result.MemberNames.First()} : {result.ErrorMessage}");
+                    unique = false;
                 }
             }
-            return null;
-        }
-
-        public static Post GetPost(BloggingContext db)
-        {
-            // display all blogs & posts
-            // force eager loading of Posts
-            var blogs = db.Blogs.Include("Posts").OrderBy(b => b.Name);
-            foreach (Blog b in blogs)
-            {
-                Console.WriteLine(b.Name);
-                if (b.Posts.Count() == 0)
-                {
-                    Console.WriteLine($"  <no posts>");
-                }
-                else
-                {
-                    foreach (Post p in b.Posts)
-                    {
-                        Console.WriteLine($"  {p.PostId}) {p.Title}");
-                    }
-                }
-            }
-            if (int.TryParse(Console.ReadLine(), out int PostId))
-            {
-                Post post = db.Posts.FirstOrDefault(p => p.PostId == PostId);
-                if (post != null)
-                {
-                    return post;
-                }
-            }
-            logger.Error("Invalid Post Id");
-            return null;
+            return unique;
         }
     }
 }
