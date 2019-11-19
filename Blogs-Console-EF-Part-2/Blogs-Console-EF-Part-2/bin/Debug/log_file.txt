@@ -1,0 +1,4 @@
+2019-11-18 18:07:01.3744|INFO|BlogsConsole.MainClass|Program started
+2019-11-18 18:07:05.0508|ERROR|BlogsConsole.MainClass|No connection string named 'BlogContext' could be found in the application config file.
+2019-11-18 18:11:11.5183|INFO|BlogsConsole.MainClass|Program started
+2019-11-18 18:22:34.1792|INFO|BlogsConsole.MainClass|Program started
