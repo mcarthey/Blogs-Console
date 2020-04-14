@@ -9,10 +9,10 @@ namespace BlogsConsole.Models
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<Post> Posts { get; set; }
 
-        public void AddBlog(Blog blog)
-        {
-            this.Blogs.Add(blog);
-            this.SaveChanges();
-        }
+        //public void AddBlog(Blog blog)
+        //{
+        //    this.Blogs.Add(blog);
+        //    this.SaveChanges();
+        //}
     }
 }
